@@ -2,63 +2,91 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>CRM-WEHAVE</title>
+    <title>CRM-WEHAVE - Painel de Controle</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #e9edef; color: #111b21; display: flex; justify-content: center; padding: 40px; }
-        .container { width: 80%; max-width: 900px; background: white; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 30px; }
+        .container { width: 95%; max-width: 1200px; background: white; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 30px; }
         h1 { margin-top: 0; color: #25D366; border-bottom: 2px solid #e9edef; padding-bottom: 10px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; }
-        .card { background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd; }
-        h3 { margin-top: 0; color: #333; }
+        .grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 30px; margin-top: 20px; }
+        .card { background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd; display: flex; flex-direction: column; }
+        h3 { margin-top: 0; color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
         label { font-size: 13px; font-weight: bold; margin-top: 10px; display: block; }
         input[type="text"], textarea { width: 100%; margin-top: 5px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-family: inherit; }
-        textarea { height: 100px; resize: none; }
-        button { width: 100%; background-color: #25D366; color: white; border: none; padding: 12px; margin-top: 15px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: background 0.2s; font-size: 15px; }
+        textarea.small { height: 80px; resize: none; }
+        textarea.large { height: 120px; resize: none; }
+        button { background-color: #25D366; color: white; border: none; padding: 10px; margin-top: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: background 0.2s; font-size: 14px; width: 100%; }
         button:hover { background-color: #1DA851; }
         button:disabled { background-color: #a5e0b8; cursor: not-allowed; }
-        .checkbox-group { display: flex; align-items: center; margin-top: 15px; gap: 8px; }
-        .checkbox-group input { margin: 0; width: 18px; height: 18px; }
-        .checkbox-group label { margin: 0; cursor: pointer; }
+        button.btn-secundario { background-color: #007bff; }
+        button.btn-secundario:hover { background-color: #0056b3; }
+        button.btn-remover { background-color: #dc3545; padding: 5px 10px; margin: 0; width: auto; font-size: 12px; }
+        button.btn-remover:hover { background-color: #c82333; }
+        
+        .table-container { max-height: 250px; overflow-y: auto; margin-top: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; background: white; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; position: sticky; top: 0; }
+        
+        .checkbox-group { display: flex; align-items: center; margin-top: 15px; gap: 8px; background: #e8f5e9; padding: 10px; border-radius: 5px; }
+        .checkbox-group input { margin: 0; width: 16px; height: 16px; }
+        .checkbox-group label { margin: 0; cursor: pointer; color: #2e7d32; font-weight: bold; }
         .status { margin-top: 15px; font-size: 14px; text-align: center; color: #555; font-weight: bold; }
-        .info { font-size: 12px; color: #667781; margin-top: 5px; }
+        hr { border: 0; border-top: 1px dashed #ccc; margin: 20px 0; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>CRM-WEHAVE Dashboard</h1>
+        <h1>CRM-WEHAVE - Gestão de Disparos</h1>
         
         <div class="grid">
-            <!-- Coluna 1: Disparo em Lote -->
+            <!-- COLUNA 1: INSERÇÃO DE CONTATOS -->
             <div class="card">
-                <h3>Disparo em Lote (Catálogo)</h3>
-                <label for="messageBatch">Mensagem Base:</label>
-                <textarea id="messageBatch" placeholder="Olá {{nome}}! Temos novidades..."></textarea>
-                <p class="info">Usa o banco de dados do Firebase. Use {{nome}} para personalizar.</p>
+                <h3>1. Adicionar Contatos à Fila</h3>
                 
-                <button id="btnBatch">Iniciar Campanha em Lote</button>
-                <div id="statusBatch" class="status"></div>
+                <!-- Adição Manual -->
+                <label>Contato Único:</label>
+                <input type="text" id="manualName" placeholder="Nome do Cliente">
+                <input type="text" id="manualPhone" placeholder="WhatsApp (Somente números com DDD)">
+                <button id="btnAddManual" class="btn-secundario">Adicionar à Tabela</button>
+                
+                <hr>
+                
+                <!-- Adição em Massa -->
+                <label>Importação em Massa (Cole texto):</label>
+                <div style="font-size: 11px; color: #666; margin-bottom: 5px;">Formato exigido: Nome, Telefone (um por linha)</div>
+                <textarea id="manualBulk" class="small" placeholder="João, 5511999999999&#10;Maria, 5511888888888"></textarea>
+                <button id="btnAddBulk" class="btn-secundario">Importar Lista</button>
             </div>
 
-            <!-- Coluna 2: Disparo Manual -->
+            <!-- COLUNA 2: TABELA E DISPARO -->
             <div class="card">
-                <h3>Disparo Manual Único</h3>
+                <h3>2. Fila de Disparo (<span id="contadorFila">0</span> contatos)</h3>
                 
-                <label for="manualName">Nome do Cliente:</label>
-                <input type="text" id="manualName" placeholder="Ex: João Pedro">
-                
-                <label for="manualPhone">WhatsApp (Com DDD):</label>
-                <input type="text" id="manualPhone" placeholder="Ex: 5533999999999">
-                
-                <label for="messageManual">Mensagem:</label>
-                <textarea id="messageManual" placeholder="Olá {{nome}}! O seu link de acesso é..."></textarea>
+                <div class="table-container">
+                    <table id="tabelaContatos">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Telefone</th>
+                                <th style="width: 50px;">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabela">
+                            <!-- Contatos aparecerão aqui -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <label>Mensagem Base para a Fila:</label>
+                <textarea id="mensagemBase" class="large" placeholder="Olá {{nome}}! Tudo bem? Passando para avisar que..."></textarea>
                 
                 <div class="checkbox-group">
-                    <input type="checkbox" id="saveToFirebase" checked>
-                    <label for="saveToFirebase">Salvar este cliente no banco de dados Firebase</label>
+                    <input type="checkbox" id="chkSalvarBD" checked>
+                    <label for="chkSalvarBD">Salvar esta lista no banco de dados Firebase</label>
                 </div>
                 
-                <button id="btnManual">Disparar e Salvar</button>
-                <div id="statusManual" class="status"></div>
+                <button id="btnDisparar" style="font-size: 16px; padding: 15px;">Iniciar Campanha WhatsApp</button>
+                <div id="statusPainel" class="status">Aguardando contatos...</div>
             </div>
         </div>
     </div>
