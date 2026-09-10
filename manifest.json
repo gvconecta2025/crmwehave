@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "EduCRM - Disparador WhatsApp (Beta)",
+  "version": "1.0.0",
+  "description": "Integração direta com o Catálogo Online via Firebase para disparos no WhatsApp.",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://web.whatsapp.com/*",
+    "https://firestore.googleapis.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Abrir EduCRM"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://web.whatsapp.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
