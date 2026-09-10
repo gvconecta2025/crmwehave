@@ -1,26 +1,70 @@
 import { firebaseConfig, appConfig } from './config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Array local que armazena a fila de disparo
     let filaDeContatos = [];
 
-    // Referências HTML
     const manualName = document.getElementById('manualName');
     const manualPhone = document.getElementById('manualPhone');
     const btnAddManual = document.getElementById('btnAddManual');
-    
     const manualBulk = document.getElementById('manualBulk');
     const btnAddBulk = document.getElementById('btnAddBulk');
-    
     const corpoTabela = document.getElementById('corpoTabela');
     const contadorFila = document.getElementById('contadorFila');
-    
     const mensagemBase = document.getElementById('mensagemBase');
     const chkSalvarBD = document.getElementById('chkSalvarBD');
+    const containerSalvarBD = document.getElementById('containerSalvarBD');
+    
+    // Botões de Controle
     const btnDisparar = document.getElementById('btnDisparar');
+    const btnPausar = document.getElementById('btnPausar');
+    const btnRetomar = document.getElementById('btnRetomar');
+    const btnCancelar = document.getElementById('btnCancelar');
     const statusPainel = document.getElementById('statusPainel');
 
-    // Função para atualizar a visualização da Tabela
+    // Ao abrir, pergunta ao background se já existe uma campanha rodando
+    chrome.runtime.sendMessage({ action: 'GET_STATUS' }, (response) => {
+        if (response && response.state !== 'IDLE') {
+            atualizarInterfacePorEstado(response.state, response.queueCount);
+        }
+    });
+
+    // Escuta mensagens do background (atualizações de fila)
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.action === 'UPDATE_STATUS') {
+            atualizarInterfacePorEstado(request.state, request.queueCount, request.message);
+        }
+    });
+
+    function atualizarInterfacePorEstado(state, queueCount, msg = "") {
+        if (msg) statusPainel.innerText = msg;
+        contadorFila.innerText = queueCount;
+
+        // Resetar botões
+        btnDisparar.classList.add('escondido');
+        btnPausar.classList.add('escondido');
+        btnRetomar.classList.add('escondido');
+        btnCancelar.classList.add('escondido');
+        containerSalvarBD.classList.add('escondido');
+
+        if (state === 'RUNNING') {
+            btnPausar.classList.remove('escondido');
+            btnCancelar.classList.remove('escondido');
+            statusPainel.style.backgroundColor = "#d4edda";
+            statusPainel.style.color = "#155724";
+        } else if (state === 'PAUSED') {
+            btnRetomar.classList.remove('escondido');
+            btnCancelar.classList.remove('escondido');
+            statusPainel.style.backgroundColor = "#fff3cd";
+            statusPainel.style.color = "#856404";
+        } else if (state === 'IDLE') {
+            btnDisparar.classList.remove('escondido');
+            containerSalvarBD.classList.remove('escondido');
+            statusPainel.style.backgroundColor = "#e9ecef";
+            statusPainel.style.color = "#383d41";
+            renderizarTabela(); // Volta a mostrar a fila local se houver
+        }
+    }
+
     function renderizarTabela() {
         corpoTabela.innerHTML = '';
         filaDeContatos.forEach((contato, index) => {
@@ -36,123 +80,77 @@ document.addEventListener('DOMContentLoaded', () => {
             const btnRemover = document.createElement('button');
             btnRemover.innerText = "X";
             btnRemover.className = "btn-remover";
-            btnRemover.onclick = () => removerContato(index);
+            btnRemover.onclick = () => {
+                filaDeContatos.splice(index, 1);
+                renderizarTabela();
+            };
             tdAcao.appendChild(btnRemover);
             
             tr.appendChild(tdNome);
             tr.appendChild(tdTel);
             tr.appendChild(tdAcao);
-            
             corpoTabela.appendChild(tr);
         });
-        
         contadorFila.innerText = filaDeContatos.length;
     }
 
     function adicionarContato(nome, telefone) {
         const telLimpo = telefone.replace(/\D/g, '');
-        if (nome && telLimpo) {
-            filaDeContatos.push({ nome: nome.trim(), telefone: telLimpo });
-        }
+        if (nome && telLimpo) filaDeContatos.push({ nome: nome.trim(), telefone: telLimpo });
     }
 
-    function removerContato(index) {
-        filaDeContatos.splice(index, 1);
-        renderizarTabela();
-    }
-
-    // ==========================================
-    // EVENTOS DE INSERÇÃO
-    // ==========================================
-    
     btnAddManual.addEventListener('click', () => {
-        if (!manualName.value || !manualPhone.value) {
-            return alert("Preencha o Nome e o WhatsApp do contato.");
-        }
+        if (!manualName.value || !manualPhone.value) return alert("Preencha Nome e WhatsApp.");
         adicionarContato(manualName.value, manualPhone.value);
         renderizarTabela();
-        
-        manualName.value = '';
-        manualPhone.value = '';
-        manualName.focus();
+        manualName.value = ''; manualPhone.value = ''; manualName.focus();
     });
 
     btnAddBulk.addEventListener('click', () => {
         const texto = manualBulk.value.trim();
-        if (!texto) return alert("Cole a lista no campo de texto.");
-        
+        if (!texto) return alert("Cole a lista no campo.");
         const linhas = texto.split('\n');
-        let adicionados = 0;
-        
         linhas.forEach(linha => {
             const partes = linha.split(',');
-            if (partes.length >= 2) {
-                adicionarContato(partes[0], partes[1]);
-                adicionados++;
-            }
+            if (partes.length >= 2) adicionarContato(partes[0], partes[1]);
         });
-        
-        if (adicionados > 0) {
-            renderizarTabela();
-            manualBulk.value = '';
-            alert(`${adicionados} contatos importados com sucesso!`);
-        } else {
-            alert("Nenhum contato válido encontrado. Use o formato: Nome, Telefone");
-        }
+        renderizarTabela();
+        manualBulk.value = '';
     });
 
-    // ==========================================
-    // LÓGICA DE DISPARO E SALVAMENTO NO FIREBASE
-    // ==========================================
-    
+    // Controles da Automação
     btnDisparar.addEventListener('click', async () => {
-        if (filaDeContatos.length === 0) return alert('A fila de disparo está vazia.');
-        
+        if (filaDeContatos.length === 0) return alert('A fila está vazia.');
         const baseMsg = mensagemBase.value.trim();
-        if (!baseMsg) return alert('Digite a Mensagem Base para a campanha.');
+        if (!baseMsg) return alert('Digite a Mensagem Base.');
 
-        btnDisparar.disabled = true;
-        
-        // Se a opção de backup estiver marcada, salva no Firebase
         if (chkSalvarBD.checked) {
-            statusPainel.innerText = "Salvando novos contatos no banco de dados Firebase...";
+            statusPainel.innerText = "Salvando leads da WeHave no Firebase...";
             const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/${appConfig.COLLECTION_NAME}`;
-            
             for (const cliente of filaDeContatos) {
                 try {
-                    const payload = {
-                        fields: {
-                            nome: { stringValue: cliente.nome },
-                            telefone: { stringValue: cliente.telefone },
-                            origem: { stringValue: "importacao_crm" }
-                        }
-                    };
-                    await fetch(firestoreUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                } catch (error) {
-                    console.error("Erro ao salvar cliente no banco: ", error);
-                }
+                    const payload = { fields: { nome: { stringValue: cliente.nome }, telefone: { stringValue: cliente.telefone }, origem: { stringValue: "crm_wehave" } } };
+                    await fetch(firestoreUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                } catch (e) { console.error("Erro Firebase", e); }
             }
         }
 
-        // Envia a fila para o motor (background) disparar
-        statusPainel.innerText = "Preparando a automação no WhatsApp...";
-        
-        chrome.runtime.sendMessage({
-            action: 'START_CAMPAIGN',
-            clientes: [...filaDeContatos], // Passa uma cópia do array
-            mensagem: baseMsg
-        });
-
-        statusPainel.style.color = "#25D366";
-        statusPainel.innerText = "Campanha INICIADA! Deixe a aba do WhatsApp aberta processando.";
-        
-        // Limpa a fila após engatilhar com sucesso
-        filaDeContatos = [];
+        chrome.runtime.sendMessage({ action: 'START_CAMPAIGN', clientes: [...filaDeContatos], mensagem: baseMsg });
+        filaDeContatos = []; 
         renderizarTabela();
-        setTimeout(() => { btnDisparar.disabled = false; }, 3000);
+    });
+
+    btnPausar.addEventListener('click', () => {
+        chrome.runtime.sendMessage({ action: 'PAUSE_CAMPAIGN' });
+    });
+
+    btnRetomar.addEventListener('click', () => {
+        chrome.runtime.sendMessage({ action: 'RESUME_CAMPAIGN' });
+    });
+
+    btnCancelar.addEventListener('click', () => {
+        if (confirm("Tem certeza que deseja cancelar os disparos restantes?")) {
+            chrome.runtime.sendMessage({ action: 'CANCEL_CAMPAIGN' });
+        }
     });
 });
