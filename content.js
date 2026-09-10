@@ -1,13 +1,11 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'CLICK_SEND') {
         clickSendButton(sendResponse);
-        return true; // Mantém a porta de resposta aberta
+        return true; 
     }
 });
 
 function clickSendButton(sendResponse) {
-    // Tenta encontrar o botão de enviar do WhatsApp
-    // O WhatsApp muda essas classes, mas o ícone 'send' é mais estável
     const tryClick = setInterval(() => {
         const sendIcon = document.querySelector('span[data-icon="send"]');
         
@@ -21,7 +19,6 @@ function clickSendButton(sendResponse) {
         }
     }, 1000);
 
-    // Desiste após 10 tentativas para não travar o loop
     setTimeout(() => {
         clearInterval(tryClick);
         sendResponse({ status: 'timeout' });
