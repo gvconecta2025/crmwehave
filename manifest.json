@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "CRM-WEHAVE",
-  "version": "1.1.0",
-  "description": "Disparador WhatsApp Integrado ao Firebase (Lote e Manual)",
+  "version": "1.2.0",
+  "description": "Dashboard de Disparo WhatsApp com Gestão de Lista Interna",
   "permissions": [
     "activeTab",
     "tabs",
