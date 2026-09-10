@@ -1,0 +1,7 @@
+{
+  "_comentario": "Estrutura de dados padrão exigida pelo CRM-WeHave para a coleção 'clientes'",
+  "nome": "Professor Luiz",
+  "telefone": "5533999999999",
+  "data_cadastro": "2026-09-10T09:38:00Z",
+  "origem": "app_loja"
+}
