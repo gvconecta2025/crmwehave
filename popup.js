@@ -1,4 +1,4 @@
-import CONFIG from './config.js';
+import { firebaseConfig, appConfig } from './config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const btnStart = document.getElementById('btnStart');
@@ -14,48 +14,50 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         btnStart.disabled = true;
-        statusText.innerText = "Conectando ao Firebase...";
+        statusText.innerText = "Conectando ao banco WeHave...";
 
         try {
-            // Consulta REST ao Firestore do Catálogo Online
-            const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${CONFIG.FIREBASE_PROJECT_ID}/databases/(default)/documents/${CONFIG.COLLECTION_NAME}`;
+            // Consulta REST ao Firestore do projeto wehave-v2
+            const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/${appConfig.COLLECTION_NAME}`;
             
             const response = await fetch(firestoreUrl);
-            if (!response.ok) throw new Error('Falha ao acessar o banco de dados. Verifique o FIREBASE_PROJECT_ID.');
+            if (!response.ok) {
+                throw new Error('Falha ao ler o banco. O banco pode estar vazio ou as permissões do Firestore precisam liberar leitura pública ou autenticada.');
+            }
             
             const data = await response.json();
             
-            if (!data.documents) {
-                statusText.innerText = "Nenhum cliente encontrado.";
+            if (!data.documents || data.documents.length === 0) {
+                statusText.innerText = `Nenhum cliente encontrado na tabela '${appConfig.COLLECTION_NAME}'.`;
                 btnStart.disabled = false;
                 return;
             }
 
-            // Mapeia e limpa os dados recebidos do Firestore
+            // Tratamento da estrutura de retorno do Firestore REST API
             const clientes = data.documents.map(doc => {
                 const fields = doc.fields;
                 return {
+                    // Substitua 'nome' e 'telefone' se as suas colunas no banco tiverem nomes diferentes
                     nome: fields.nome ? fields.nome.stringValue : 'Cliente',
                     telefone: fields.telefone ? fields.telefone.stringValue.replace(/\D/g, '') : null
                 };
-            }).filter(c => c.telefone); // Remove quem não tem telefone
+            }).filter(c => c.telefone);
 
             if (clientes.length === 0) {
-                statusText.innerText = "Nenhum cliente com telefone válido.";
+                statusText.innerText = "Nenhum cliente possui um telefone válido.";
                 btnStart.disabled = false;
                 return;
             }
 
-            statusText.innerText = `Preparando disparo para ${clientes.length} contatos...`;
+            statusText.innerText = `Disparo engatilhado para ${clientes.length} contatos...`;
 
-            // Envia a lista para o background processar, permitindo fechar o popup
             chrome.runtime.sendMessage({
                 action: 'START_CAMPAIGN',
                 clientes: clientes,
                 mensagem: baseMessage
             });
 
-            statusText.innerText = `Campanha enviada para execução! Pode fechar esta janela.`;
+            statusText.innerText = `Campanha em andamento no WhatsApp! Pode fechar esta aba.`;
 
         } catch (error) {
             console.error(error);
