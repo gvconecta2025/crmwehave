@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "CRM-WEHAVE",
-  "version": "1.2.0",
-  "description": "Dashboard de Disparo WhatsApp com Gestão de Lista Interna",
+  "version": "1.3.0",
+  "description": "Dashboard de Disparo WhatsApp com Gestão e Controle de Fila",
   "permissions": [
     "activeTab",
     "tabs",
