@@ -5,6 +5,11 @@ let queue = [];
 let baseMessage = "";
 let whatsappTabId = null;
 
+// Escuta o clique no ícone da extensão para abrir a tela cheia
+chrome.action.onClicked.addListener(() => {
+    chrome.tabs.create({ url: chrome.runtime.getURL("crm.html") });
+});
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'START_CAMPAIGN') {
         queue = request.clientes;
@@ -37,7 +42,7 @@ async function startCampaign() {
 async function processNextClient() {
     if (queue.length === 0) {
         isRunning = false;
-        console.log("✅ CRM WeHave: Campanha finalizada com sucesso!");
+        console.log("✅ CRM-WEHAVE: Finalizado!");
         return;
     }
 
@@ -52,7 +57,7 @@ async function processNextClient() {
     setTimeout(() => {
         chrome.tabs.sendMessage(whatsappTabId, { action: 'CLICK_SEND' }, (response) => {
             const delay = Math.floor(Math.random() * (appConfig.DELAY_MAX - appConfig.DELAY_MIN + 1)) + appConfig.DELAY_MIN;
-            console.log(`Mensagem enviada para ${cliente.nome}. Aguardando delay...`);
+            console.log(`Mensagem enviada para ${cliente.nome}. Aguardando...`);
             setTimeout(processNextClient, delay);
         });
     }, 7000); 
