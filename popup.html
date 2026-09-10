@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>EduCRM - WhatsApp</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; width: 320px; padding: 15px; margin: 0; background: #f0f2f5; color: #111b21; }
+        h2 { font-size: 18px; margin-top: 0; border-bottom: 2px solid #25D366; padding-bottom: 5px; }
+        label { font-size: 13px; font-weight: bold; margin-top: 10px; display: block; }
+        textarea { width: 100%; height: 100px; margin-top: 5px; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-family: inherit; resize: none; }
+        button { width: 100%; background-color: #25D366; color: white; border: none; padding: 10px; margin-top: 15px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        button:hover { background-color: #1DA851; }
+        button:disabled { background-color: #a5e0b8; cursor: not-allowed; }
+        .status { margin-top: 15px; font-size: 12px; text-align: center; color: #555; }
+        .info { font-size: 11px; color: #667781; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <h2>EduCRM - Disparos</h2>
+    
+    <label for="message">Sua Mensagem Base:</label>
+    <textarea id="message" placeholder="Olá {{nome}}! Temos novidades no catálogo..."></textarea>
+    <p class="info">Use {{nome}} para personalizar a mensagem.</p>
+    
+    <button id="btnStart">Iniciar Campanha</button>
+    
+    <div id="statusText" class="status">Aguardando comando...</div>
+
+    <script type="module" src="popup.js"></script>
+</body>
+</html>
