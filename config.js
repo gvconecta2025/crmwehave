@@ -10,9 +10,7 @@ const firebaseConfig = {
 };
 
 const appConfig = {
-    // Nome da tabela onde estão os contatos no Firestore (Ajuste se necessário)
     COLLECTION_NAME: "clientes", 
-    // Configurações de segurança Anti-Ban (em milissegundos)
     DELAY_MIN: 3000,
     DELAY_MAX: 7000
 };
